@@ -3,7 +3,7 @@ import { Calendar, Leaf, FileText } from "lucide-react";
 
 interface SessionCardProps {
   strain: string;
-  amount: string;
+  amount: number;
   time: string;
   notes?: string;
 }
@@ -26,7 +26,7 @@ export const SessionCard = ({ strain, amount, time, notes }: SessionCardProps) =
           <Leaf className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-lg">{strain}</h3>
         </div>
-        <span className="text-2xl font-bold text-primary">{amount}g</span>
+        <span className="text-2xl font-bold text-primary">{amount.toFixed(1)}g</span>
       </div>
 
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">

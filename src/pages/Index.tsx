@@ -1,23 +1,157 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { User, Session as SupabaseSession } from "@supabase/supabase-js";
 import { SessionForm } from "@/components/SessionForm";
 import { SessionList } from "@/components/SessionList";
 import { Stats } from "@/components/Stats";
-import { Leaf } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Leaf, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import heroBg from "@/assets/hero-bg.jpg";
 
 interface Session {
+  id: string;
   strain: string;
-  amount: string;
+  amount: number;
   time: string;
   notes: string;
 }
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<SupabaseSession | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAddSession = (session: Session) => {
-    setSessions([session, ...sessions]);
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (!session) {
+          navigate("/auth");
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  // Load sessions when user is authenticated
+  useEffect(() => {
+    if (user) {
+      loadSessions();
+    }
+  }, [user]);
+
+  const loadSessions = async () => {
+    const { data, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Fehler beim Laden",
+        description: "Sessions konnten nicht geladen werden.",
+      });
+      return;
+    }
+
+    if (data) {
+      setSessions(
+        data.map((s) => ({
+          id: s.id,
+          strain: s.strain,
+          amount: s.amount,
+          time: s.created_at,
+          notes: s.notes || "",
+        }))
+      );
+    }
   };
+
+  const handleAddSession = async (sessionData: {
+    strain: string;
+    amount: number;
+    notes: string;
+  }) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("sessions")
+      .insert([
+        {
+          user_id: user.id,
+          strain: sessionData.strain,
+          amount: sessionData.amount,
+          notes: sessionData.notes,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Fehler",
+        description: "Session konnte nicht gespeichert werden.",
+      });
+      return;
+    }
+
+    if (data) {
+      const newSession: Session = {
+        id: data.id,
+        strain: data.strain,
+        amount: data.amount,
+        time: data.created_at,
+        notes: data.notes || "",
+      };
+      setSessions([newSession, ...sessions]);
+      
+      toast({
+        title: "Session gespeichert!",
+        description: `${sessionData.strain} wurde hinzugefügt.`,
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse">
+          <Leaf className="w-12 h-12 text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,6 +171,17 @@ const Index = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Tracke deine Sessions, behalte den Überblick und verstehe deine Gewohnheiten
           </p>
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Abmelden
+            </Button>
+          </div>
         </div>
       </div>
 

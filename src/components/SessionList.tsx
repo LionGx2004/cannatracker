@@ -3,7 +3,7 @@ import { Clock } from "lucide-react";
 
 interface Session {
   strain: string;
-  amount: string;
+  amount: number;
   time: string;
   notes: string;
 }

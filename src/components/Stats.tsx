@@ -3,7 +3,7 @@ import { TrendingUp, Calendar, Leaf } from "lucide-react";
 
 interface Session {
   strain: string;
-  amount: string;
+  amount: number;
   time: string;
   notes: string;
 }
@@ -14,7 +14,7 @@ interface StatsProps {
 
 export const Stats = ({ sessions }: StatsProps) => {
   const totalAmount = sessions.reduce((sum, session) => {
-    return sum + parseFloat(session.amount);
+    return sum + session.amount;
   }, 0);
 
   const today = new Date().toDateString();
