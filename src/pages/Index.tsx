@@ -6,9 +6,20 @@ import { SessionForm } from "@/components/SessionForm";
 import { SessionList } from "@/components/SessionList";
 import { Stats } from "@/components/Stats";
 import { Button } from "@/components/ui/button";
-import { Leaf, LogOut } from "lucide-react";
+import { Leaf, LogOut, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import heroBg from "@/assets/hero-bg.jpg";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Session {
   id: string;
@@ -139,6 +150,36 @@ const Index = () => {
     navigate("/auth");
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      const { error } = await supabase.rpc("delete_current_user");
+      
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Fehler",
+          description: "Account konnte nicht gelöscht werden.",
+        });
+        return;
+      }
+
+      toast({
+        title: "Account gelöscht",
+        description: "Dein Account wurde erfolgreich gelöscht.",
+      });
+      
+      // Sign out and redirect
+      await supabase.auth.signOut();
+      navigate("/auth");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Fehler",
+        description: "Ein unerwarteter Fehler ist aufgetreten.",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -171,7 +212,7 @@ const Index = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Tracke deine Sessions, behalte den Überblick und verstehe deine Gewohnheiten
           </p>
-          <div className="mt-4">
+          <div className="mt-4 flex gap-2 justify-center">
             <Button
               variant="outline"
               size="sm"
@@ -181,6 +222,29 @@ const Index = () => {
               <LogOut className="w-4 h-4" />
               Abmelden
             </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-2">
+                  <Trash2 className="w-4 h-4" />
+                  Account löschen
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Account wirklich löschen?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Diese Aktion kann nicht rückgängig gemacht werden. Dein Account und alle deine Sessions werden dauerhaft gelöscht.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAccount}>
+                    Ja, Account löschen
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>
