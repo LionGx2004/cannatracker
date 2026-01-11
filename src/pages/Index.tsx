@@ -5,6 +5,7 @@ import { User, Session as SupabaseSession } from "@supabase/supabase-js";
 import { SessionForm } from "@/components/SessionForm";
 import { SessionList } from "@/components/SessionList";
 import { Stats } from "@/components/Stats";
+import { ChatBot } from "@/components/ChatBot";
 import { Button } from "@/components/ui/button";
 import { Leaf, LogOut, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -275,6 +276,17 @@ const Index = () => {
           <p>Track responsibly. This app is for personal tracking purposes only.</p>
         </div>
       </footer>
+
+      {/* AI Chatbot */}
+      <ChatBot
+        sessions={sessions.map((s) => ({
+          id: s.id,
+          strain: s.strain,
+          amount: s.amount,
+          notes: s.notes,
+          created_at: s.time,
+        }))}
+      />
     </div>
   );
 };
