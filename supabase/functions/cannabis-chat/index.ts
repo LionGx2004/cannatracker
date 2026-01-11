@@ -14,9 +14,84 @@ serve(async (req) => {
   try {
     const { messages, sessionData } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // Initialize Supabase client to fetch strain database
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Fetch strain data with effects and terpenes
+    const { data: strains } = await supabase
+      .from("strains")
+      .select(`
+        name, type, thc_min, thc_max, description_de, flavor_de, aroma_de,
+        strain_effects(
+          intensity,
+          effects(name, name_de, category)
+        ),
+        strain_terpenes(
+          dominance,
+          terpenes(name, scent_de, effects_de)
+        )
+      `)
+      .limit(30);
+
+    // Fetch all terpenes for reference
+    const { data: terpenes } = await supabase
+      .from("terpenes")
+      .select("name, scent_de, effects_de, also_found_in_de");
+
+    // Fetch all effects for reference
+    const { data: effects } = await supabase
+      .from("effects")
+      .select("name, name_de, description_de, category");
+
+    // Build strain database context
+    let strainContext = "";
+    if (strains && strains.length > 0) {
+      strainContext = `
+CANNABIS-SORTEN DATENBANK (nutze diese Informationen für präzise Antworten):
+
+${strains.map(s => {
+  const effectsList = s.strain_effects
+    ?.map((se: any) => `${se.effects?.name_de} (${se.intensity})`)
+    .join(", ") || "keine";
+  const terpenesList = s.strain_terpenes
+    ?.map((st: any) => `${st.terpenes?.name} - ${st.dominance}`)
+    .join(", ") || "keine";
+  return `**${s.name}** (${s.type})
+- THC: ${s.thc_min}-${s.thc_max}%
+- Beschreibung: ${s.description_de}
+- Geschmack: ${s.flavor_de}
+- Aroma: ${s.aroma_de}
+- Effekte: ${effectsList}
+- Terpene: ${terpenesList}`;
+}).join("\n\n")}`;
+    }
+
+    // Build terpene reference
+    let terpeneContext = "";
+    if (terpenes && terpenes.length > 0) {
+      terpeneContext = `
+TERPENE REFERENZ:
+${terpenes.map(t => `- **${t.name}**: ${t.scent_de}. Wirkung: ${t.effects_de}. Auch in: ${t.also_found_in_de}`).join("\n")}`;
+    }
+
+    // Build effect categories
+    let effectContext = "";
+    if (effects && effects.length > 0) {
+      const positiveEffects = effects.filter(e => e.category === 'positive').map(e => e.name_de).join(", ");
+      const medicalEffects = effects.filter(e => e.category === 'medical').map(e => e.name_de).join(", ");
+      const negativeEffects = effects.filter(e => e.category === 'negative').map(e => e.name_de).join(", ");
+      effectContext = `
+EFFEKT-KATEGORIEN:
+- Positive Effekte: ${positiveEffects}
+- Medizinische Effekte: ${medicalEffects}
+- Mögliche Nebenwirkungen: ${negativeEffects}`;
     }
 
     // Build context from user's session data
@@ -38,29 +113,36 @@ serve(async (req) => {
       const topStrains = Object.entries(strainCounts)
         .sort((a, b) => b[1].count - a[1].count)
         .slice(0, 5)
-        .map(([strain, data]) => `${strain} (${data.count} sessions, ${data.totalAmount.toFixed(1)}g total)`)
+        .map(([strain, data]) => `${strain} (${data.count} Sessions, ${data.totalAmount.toFixed(1)}g)`)
         .join(", ");
 
       userContext = `
-User's Session History:
-- Total sessions: ${totalSessions}
-- Total consumption: ${totalAmount.toFixed(1)}g
-- Top strains: ${topStrains}
+NUTZER SESSION-HISTORIE:
+- Gesamte Sessions: ${totalSessions}
+- Gesamtkonsum: ${totalAmount.toFixed(1)}g
+- Top-Sorten: ${topStrains}
 
-Use this data to provide personalized recommendations and insights when relevant.`;
+Nutze diese Daten für personalisierte Empfehlungen!`;
     }
 
-    const systemPrompt = `Du bist ein freundlicher und sachkundiger Cannabis-Berater. Du hilfst Nutzern mit Informationen über Cannabis-Sorten, deren Wirkungen, Terpene und gibst personalisierte Empfehlungen basierend auf ihren Vorlieben und Session-Daten.
+    const systemPrompt = `Du bist ein freundlicher und sachkundiger Cannabis-Berater mit Zugang zu einer umfangreichen Sorten-Datenbank. Du hilfst Nutzern mit präzisen Informationen über Cannabis-Sorten, deren Wirkungen, Terpene und gibst personalisierte Empfehlungen.
 
-Wichtige Richtlinien:
-- Antworte immer auf Deutsch
-- Sei sachlich und informativ über Cannabis-Sorten und deren Eigenschaften
-- Unterscheide zwischen Indica, Sativa und Hybrid-Sorten
-- Erkläre Terpene und deren Einfluss auf die Wirkung
+WICHTIGE RICHTLINIEN:
+- Antworte IMMER auf Deutsch
+- Nutze die Datenbank-Informationen für präzise, faktenbasierte Antworten
+- Unterscheide zwischen Indica (entspannend), Sativa (energetisierend) und Hybrid-Sorten
+- Erkläre Terpene und deren Einfluss auf die Wirkung (Entourage-Effekt)
 - Gib personalisierte Empfehlungen basierend auf den Session-Daten des Nutzers
+- Nenne THC-Gehalt wenn nach Potenz gefragt wird
 - Betone verantwortungsvollen Konsum
-- Halte Antworten prägnant aber informativ
-- Bei Fragen zu Gesundheit oder medizinischen Themen weise darauf hin, dass ein Arzt konsultiert werden sollte
+- Halte Antworten prägnant aber informativ (max 3-4 Absätze)
+- Bei medizinischen Fragen: empfehle Arztbesuch
+
+${strainContext}
+
+${terpeneContext}
+
+${effectContext}
 
 ${userContext}`;
 
