@@ -13,6 +13,76 @@ serve(async (req) => {
 
   try {
     const { messages, sessionData } = await req.json();
+
+    // ============== INPUT VALIDATION ==============
+    // Validate messages array
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({ error: "Ungültiges Nachrichtenformat" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (messages.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Zu viele Nachrichten (max 50)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate message structure
+    for (const msg of messages) {
+      if (!msg.role || !["user", "assistant"].includes(msg.role)) {
+        return new Response(
+          JSON.stringify({ error: "Ungültige Nachrichtenrolle" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (!msg.content || typeof msg.content !== "string") {
+        return new Response(
+          JSON.stringify({ error: "Ungültiger Nachrichteninhalt" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (msg.content.length > 4000) {
+        return new Response(
+          JSON.stringify({ error: "Nachricht zu lang (max 4000 Zeichen)" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Validate sessionData if provided
+    if (sessionData) {
+      if (!Array.isArray(sessionData)) {
+        return new Response(
+          JSON.stringify({ error: "Ungültiges Session-Datenformat" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (sessionData.length > 1000) {
+        return new Response(
+          JSON.stringify({ error: "Zu viele Sessions (max 1000)" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      for (const session of sessionData) {
+        if (!session.strain || typeof session.strain !== "string" || session.strain.length > 100) {
+          return new Response(
+            JSON.stringify({ error: "Ungültige Session-Sorte" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (typeof session.amount !== "number" || session.amount <= 0 || session.amount > 1000) {
+          return new Response(
+            JSON.stringify({ error: "Ungültige Session-Menge" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+    // ============== END INPUT VALIDATION ==============
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
