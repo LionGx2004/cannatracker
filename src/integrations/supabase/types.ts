@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      effects: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          description_de: string | null
+          id: string
+          name: string
+          name_de: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          description_de?: string | null
+          id?: string
+          name: string
+          name_de: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          description_de?: string | null
+          id?: string
+          name?: string
+          name_de?: string
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           amount: number
@@ -38,6 +68,165 @@ export type Database = {
           notes?: string | null
           strain?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      strain_effects: {
+        Row: {
+          effect_id: string
+          id: string
+          intensity: string | null
+          strain_id: string
+        }
+        Insert: {
+          effect_id: string
+          id?: string
+          intensity?: string | null
+          strain_id: string
+        }
+        Update: {
+          effect_id?: string
+          id?: string
+          intensity?: string | null
+          strain_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strain_effects_effect_id_fkey"
+            columns: ["effect_id"]
+            isOneToOne: false
+            referencedRelation: "effects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strain_effects_strain_id_fkey"
+            columns: ["strain_id"]
+            isOneToOne: false
+            referencedRelation: "strains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strain_terpenes: {
+        Row: {
+          dominance: string | null
+          id: string
+          strain_id: string
+          terpene_id: string
+        }
+        Insert: {
+          dominance?: string | null
+          id?: string
+          strain_id: string
+          terpene_id: string
+        }
+        Update: {
+          dominance?: string | null
+          id?: string
+          strain_id?: string
+          terpene_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strain_terpenes_strain_id_fkey"
+            columns: ["strain_id"]
+            isOneToOne: false
+            referencedRelation: "strains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strain_terpenes_terpene_id_fkey"
+            columns: ["terpene_id"]
+            isOneToOne: false
+            referencedRelation: "terpenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strains: {
+        Row: {
+          aroma: string | null
+          aroma_de: string | null
+          cbd_max: number | null
+          cbd_min: number | null
+          created_at: string
+          description: string | null
+          description_de: string | null
+          flavor: string | null
+          flavor_de: string | null
+          id: string
+          name: string
+          thc_max: number | null
+          thc_min: number | null
+          type: string
+        }
+        Insert: {
+          aroma?: string | null
+          aroma_de?: string | null
+          cbd_max?: number | null
+          cbd_min?: number | null
+          created_at?: string
+          description?: string | null
+          description_de?: string | null
+          flavor?: string | null
+          flavor_de?: string | null
+          id?: string
+          name: string
+          thc_max?: number | null
+          thc_min?: number | null
+          type: string
+        }
+        Update: {
+          aroma?: string | null
+          aroma_de?: string | null
+          cbd_max?: number | null
+          cbd_min?: number | null
+          created_at?: string
+          description?: string | null
+          description_de?: string | null
+          flavor?: string | null
+          flavor_de?: string | null
+          id?: string
+          name?: string
+          thc_max?: number | null
+          thc_min?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
+      terpenes: {
+        Row: {
+          also_found_in: string | null
+          also_found_in_de: string | null
+          created_at: string
+          effects: string
+          effects_de: string
+          id: string
+          name: string
+          scent: string
+          scent_de: string
+        }
+        Insert: {
+          also_found_in?: string | null
+          also_found_in_de?: string | null
+          created_at?: string
+          effects: string
+          effects_de: string
+          id?: string
+          name: string
+          scent: string
+          scent_de: string
+        }
+        Update: {
+          also_found_in?: string | null
+          also_found_in_de?: string | null
+          created_at?: string
+          effects?: string
+          effects_de?: string
+          id?: string
+          name?: string
+          scent?: string
+          scent_de?: string
         }
         Relationships: []
       }
