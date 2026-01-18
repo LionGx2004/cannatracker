@@ -6,6 +6,7 @@ import { SessionForm } from "@/components/SessionForm";
 import { SessionList } from "@/components/SessionList";
 import { Stats } from "@/components/Stats";
 import { ChatBot } from "@/components/ChatBot";
+import { EditSessionDialog } from "@/components/EditSessionDialog";
 import { Button } from "@/components/ui/button";
 import { Leaf, LogOut, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +38,8 @@ const Index = () => {
   const [session, setSession] = useState<SupabaseSession | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -144,6 +147,45 @@ const Index = () => {
         description: `${sessionData.strain} wurde hinzugefügt.`,
       });
     }
+  };
+
+  const handleEditSession = (id: string) => {
+    const sessionToEdit = sessions.find((s) => s.id === id);
+    if (sessionToEdit) {
+      setEditingSession(sessionToEdit);
+      setEditDialogOpen(true);
+    }
+  };
+
+  const handleSaveSession = async (updatedSession: Session) => {
+    const { error } = await supabase
+      .from("sessions")
+      .update({
+        strain: updatedSession.strain,
+        amount: updatedSession.amount,
+        notes: updatedSession.notes,
+      })
+      .eq("id", updatedSession.id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Fehler",
+        description: "Session konnte nicht aktualisiert werden.",
+      });
+      return;
+    }
+
+    setSessions(
+      sessions.map((s) =>
+        s.id === updatedSession.id ? updatedSession : s
+      )
+    );
+
+    toast({
+      title: "Session aktualisiert!",
+      description: `${updatedSession.strain} wurde gespeichert.`,
+    });
   };
 
   const handleLogout = async () => {
@@ -266,7 +308,7 @@ const Index = () => {
 
         {/* Sessions List */}
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-          <SessionList sessions={sessions} />
+          <SessionList sessions={sessions} onEditSession={handleEditSession} />
         </div>
       </div>
 
@@ -286,6 +328,14 @@ const Index = () => {
           notes: s.notes,
           created_at: s.time,
         }))}
+      />
+
+      {/* Edit Session Dialog */}
+      <EditSessionDialog
+        session={editingSession}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSave={handleSaveSession}
       />
     </div>
   );
