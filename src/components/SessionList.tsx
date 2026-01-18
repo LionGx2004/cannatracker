@@ -12,9 +12,10 @@ interface Session {
 interface SessionListProps {
   sessions: Session[];
   onEditSession?: (id: string) => void;
+  onDeleteSession?: (id: string) => void;
 }
 
-export const SessionList = ({ sessions, onEditSession }: SessionListProps) => {
+export const SessionList = ({ sessions, onEditSession, onDeleteSession }: SessionListProps) => {
   if (sessions.length === 0) {
     return (
       <div className="text-center py-12">
@@ -37,6 +38,7 @@ export const SessionList = ({ sessions, onEditSession }: SessionListProps) => {
             key={session.id} 
             {...session} 
             onEdit={onEditSession}
+            onDelete={onDeleteSession}
           />
         ))}
       </div>

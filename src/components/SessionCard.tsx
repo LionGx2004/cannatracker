@@ -1,6 +1,17 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Leaf, FileText, Pencil } from "lucide-react";
+import { Calendar, Leaf, FileText, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface SessionCardProps {
   id: string;
@@ -9,9 +20,10 @@ interface SessionCardProps {
   time: string;
   notes?: string;
   onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const SessionCard = ({ id, strain, amount, time, notes, onEdit }: SessionCardProps) => {
+export const SessionCard = ({ id, strain, amount, time, notes, onEdit, onDelete }: SessionCardProps) => {
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
     return new Intl.DateTimeFormat("de-DE", {
@@ -31,16 +43,45 @@ export const SessionCard = ({ id, strain, amount, time, notes, onEdit }: Session
         </div>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold text-primary">{amount.toFixed(1)}g</span>
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => onEdit(id)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
+          <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => onEdit(id)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+            {onDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Session löschen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Möchtest du die Session "{strain}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(id)}>
+                      Löschen
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
       </div>
 
