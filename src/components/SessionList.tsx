@@ -2,6 +2,7 @@ import { SessionCard } from "./SessionCard";
 import { Clock } from "lucide-react";
 
 interface Session {
+  id: string;
   strain: string;
   amount: number;
   time: string;
@@ -10,9 +11,10 @@ interface Session {
 
 interface SessionListProps {
   sessions: Session[];
+  onEditSession?: (id: string) => void;
 }
 
-export const SessionList = ({ sessions }: SessionListProps) => {
+export const SessionList = ({ sessions, onEditSession }: SessionListProps) => {
   if (sessions.length === 0) {
     return (
       <div className="text-center py-12">
@@ -30,8 +32,12 @@ export const SessionList = ({ sessions }: SessionListProps) => {
         <h2 className="text-2xl font-bold">Deine Sessions</h2>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {sessions.map((session, index) => (
-          <SessionCard key={index} {...session} />
+        {sessions.map((session) => (
+          <SessionCard 
+            key={session.id} 
+            {...session} 
+            onEdit={onEditSession}
+          />
         ))}
       </div>
     </div>
