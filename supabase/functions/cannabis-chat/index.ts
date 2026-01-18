@@ -12,7 +12,37 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, sessionData } = await req.json();
+    // ============== AUTHENTICATION ==============
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentifizierung erforderlich" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    // Create client with user's token to respect RLS
+    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    });
+
+    // Verify the user's token
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Ungültige Authentifizierung" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // ============== END AUTHENTICATION ==============
+
+    const { messages } = await req.json();
 
     // ============== INPUT VALIDATION ==============
     // Validate messages array
@@ -51,51 +81,27 @@ serve(async (req) => {
         );
       }
     }
-
-    // Validate sessionData if provided
-    if (sessionData) {
-      if (!Array.isArray(sessionData)) {
-        return new Response(
-          JSON.stringify({ error: "Ungültiges Session-Datenformat" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (sessionData.length > 1000) {
-        return new Response(
-          JSON.stringify({ error: "Zu viele Sessions (max 1000)" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      for (const session of sessionData) {
-        if (!session.strain || typeof session.strain !== "string" || session.strain.length > 100) {
-          return new Response(
-            JSON.stringify({ error: "Ungültige Session-Sorte" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        if (typeof session.amount !== "number" || session.amount <= 0 || session.amount > 1000) {
-          return new Response(
-            JSON.stringify({ error: "Ungültige Session-Menge" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      }
-    }
     // ============== END INPUT VALIDATION ==============
 
+    // Fetch user's session data server-side (RLS will filter by user_id)
+    const { data: sessionData } = await supabaseAuth
+      .from('sessions')
+      .select('strain, amount, notes, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Initialize Supabase client to fetch strain database
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    // Initialize Supabase client with service role to fetch strain database (public data)
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY!);
 
     // Fetch strain data with effects and terpenes
-    const { data: strains } = await supabase
+    const { data: strains } = await supabaseAdmin
       .from("strains")
       .select(`
         name, type, thc_min, thc_max, description_de, flavor_de, aroma_de,
@@ -111,12 +117,12 @@ serve(async (req) => {
       .limit(30);
 
     // Fetch all terpenes for reference
-    const { data: terpenes } = await supabase
+    const { data: terpenes } = await supabaseAdmin
       .from("terpenes")
       .select("name, scent_de, effects_de, also_found_in_de");
 
     // Fetch all effects for reference
-    const { data: effects } = await supabase
+    const { data: effects } = await supabaseAdmin
       .from("effects")
       .select("name, name_de, description_de, category");
 
@@ -126,7 +132,7 @@ serve(async (req) => {
       strainContext = `
 CANNABIS-SORTEN DATENBANK (nutze diese Informationen für präzise Antworten):
 
-${strains.map(s => {
+${strains.map((s: any) => {
   const effectsList = s.strain_effects
     ?.map((se: any) => `${se.effects?.name_de} (${se.intensity})`)
     .join(", ") || "keine";
@@ -148,15 +154,15 @@ ${strains.map(s => {
     if (terpenes && terpenes.length > 0) {
       terpeneContext = `
 TERPENE REFERENZ:
-${terpenes.map(t => `- **${t.name}**: ${t.scent_de}. Wirkung: ${t.effects_de}. Auch in: ${t.also_found_in_de}`).join("\n")}`;
+${terpenes.map((t: any) => `- **${t.name}**: ${t.scent_de}. Wirkung: ${t.effects_de}. Auch in: ${t.also_found_in_de}`).join("\n")}`;
     }
 
     // Build effect categories
     let effectContext = "";
     if (effects && effects.length > 0) {
-      const positiveEffects = effects.filter(e => e.category === 'positive').map(e => e.name_de).join(", ");
-      const medicalEffects = effects.filter(e => e.category === 'medical').map(e => e.name_de).join(", ");
-      const negativeEffects = effects.filter(e => e.category === 'negative').map(e => e.name_de).join(", ");
+      const positiveEffects = effects.filter((e: any) => e.category === 'positive').map((e: any) => e.name_de).join(", ");
+      const medicalEffects = effects.filter((e: any) => e.category === 'medical').map((e: any) => e.name_de).join(", ");
+      const negativeEffects = effects.filter((e: any) => e.category === 'negative').map((e: any) => e.name_de).join(", ");
       effectContext = `
 EFFEKT-KATEGORIEN:
 - Positive Effekte: ${positiveEffects}

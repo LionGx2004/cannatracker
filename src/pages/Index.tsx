@@ -349,15 +349,7 @@ const Index = () => {
       </footer>
 
       {/* AI Chatbot */}
-      <ChatBot
-        sessions={sessions.map((s) => ({
-          id: s.id,
-          strain: s.strain,
-          amount: s.amount,
-          notes: s.notes,
-          created_at: s.time,
-        }))}
-      />
+      <ChatBot />
 
       {/* Edit Session Dialog */}
       <EditSessionDialog
