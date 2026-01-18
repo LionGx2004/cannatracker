@@ -188,6 +188,31 @@ const Index = () => {
     });
   };
 
+  const handleDeleteSession = async (id: string) => {
+    const sessionToDelete = sessions.find((s) => s.id === id);
+    
+    const { error } = await supabase
+      .from("sessions")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Fehler",
+        description: "Session konnte nicht gelöscht werden.",
+      });
+      return;
+    }
+
+    setSessions(sessions.filter((s) => s.id !== id));
+
+    toast({
+      title: "Session gelöscht",
+      description: sessionToDelete ? `${sessionToDelete.strain} wurde entfernt.` : "Session wurde entfernt.",
+    });
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
@@ -308,7 +333,11 @@ const Index = () => {
 
         {/* Sessions List */}
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-          <SessionList sessions={sessions} onEditSession={handleEditSession} />
+          <SessionList 
+            sessions={sessions} 
+            onEditSession={handleEditSession} 
+            onDeleteSession={handleDeleteSession}
+          />
         </div>
       </div>
 
