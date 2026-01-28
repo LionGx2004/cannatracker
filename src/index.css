@@ -9,7 +9,7 @@ All colors MUST be HSL.
 @layer base {
   /* Light Mode (default) - Bärchenfarben mit grünen Akzenten */
   :root {
-    --background: 35 30% 95%;
+    --background: 40 40% 92%;
     --foreground: 25 25% 18%;
 
     --card: 40 35% 98%;
