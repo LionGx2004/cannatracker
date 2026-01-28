@@ -7,6 +7,7 @@ import { SessionList } from "@/components/SessionList";
 import { Stats } from "@/components/Stats";
 import { ChatBot } from "@/components/ChatBot";
 import { EditSessionDialog } from "@/components/EditSessionDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Leaf, LogOut, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -280,7 +281,8 @@ const Index = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Tracke deine Sessions, behalte den Überblick und verstehe deine Gewohnheiten
           </p>
-          <div className="mt-4 flex gap-2 justify-center">
+          <div className="mt-4 flex gap-2 justify-center items-center">
+            <ThemeToggle />
             <Button
               variant="outline"
               size="sm"
