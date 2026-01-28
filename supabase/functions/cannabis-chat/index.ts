@@ -91,17 +91,14 @@ serve(async (req) => {
       .limit(100);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Initialize Supabase client with service role to fetch strain database (public data)
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY!);
-
-    // Fetch strain data with effects and terpenes
-    const { data: strains } = await supabaseAdmin
+    // Fetch strain data with effects and terpenes using authenticated client
+    // These tables have public SELECT policies, so no service role needed
+    const { data: strains } = await supabaseAuth
       .from("strains")
       .select(`
         name, type, thc_min, thc_max, description_de, flavor_de, aroma_de,
@@ -116,13 +113,13 @@ serve(async (req) => {
       `)
       .limit(30);
 
-    // Fetch all terpenes for reference
-    const { data: terpenes } = await supabaseAdmin
+    // Fetch all terpenes for reference (public read access via RLS)
+    const { data: terpenes } = await supabaseAuth
       .from("terpenes")
       .select("name, scent_de, effects_de, also_found_in_de");
 
-    // Fetch all effects for reference
-    const { data: effects } = await supabaseAdmin
+    // Fetch all effects for reference (public read access via RLS)
+    const { data: effects } = await supabaseAuth
       .from("effects")
       .select("name, name_de, description_de, category");
 
