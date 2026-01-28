@@ -11,6 +11,7 @@ import { Leaf } from "lucide-react";
 import { z } from "zod";
 import { lovable } from "@/integrations/lovable";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Ungültige Email-Adresse" }),
@@ -136,8 +137,13 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-background/80 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-background/80 p-4 relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.1),transparent_50%)]" />
+      
+      {/* Theme Toggle in top right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
       
       <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-elegant">
         <CardHeader className="text-center space-y-2">
