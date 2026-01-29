@@ -12,6 +12,7 @@ import { z } from "zod";
 import { lovable } from "@/integrations/lovable";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CookieBanner } from "@/components/CookieBanner";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Ungültige Email-Adresse" }),
@@ -333,6 +334,7 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+      <CookieBanner />
     </div>
   );
 };
