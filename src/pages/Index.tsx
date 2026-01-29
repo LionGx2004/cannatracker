@@ -347,9 +347,14 @@ const Index = () => {
       <footer className="mt-20 py-8 border-t border-border/30">
         <div className="container mx-auto px-4 text-center text-muted-foreground text-sm space-y-2">
           <p>Track responsibly. This app is for personal tracking purposes only.</p>
-          <Link to="/impressum" className="hover:text-primary transition-colors">
-            Impressum
-          </Link>
+          <div className="space-x-4">
+            <Link to="/impressum" className="hover:text-primary transition-colors">
+              Impressum
+            </Link>
+            <Link to="/datenschutz" className="hover:text-primary transition-colors">
+              Datenschutz
+            </Link>
+          </div>
         </div>
       </footer>
 
