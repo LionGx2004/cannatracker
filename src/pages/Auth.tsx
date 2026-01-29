@@ -323,9 +323,12 @@ const Auth = () => {
             </TabsContent>
           </Tabs>
           
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-x-4">
             <Link to="/impressum" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Impressum
+            </Link>
+            <Link to="/datenschutz" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              Datenschutz
             </Link>
           </div>
         </CardContent>
