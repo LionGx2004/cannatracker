@@ -7,6 +7,7 @@ import { SessionList } from "@/components/SessionList";
 import { Stats } from "@/components/Stats";
 import { ChatBot } from "@/components/ChatBot";
 import { EditSessionDialog } from "@/components/EditSessionDialog";
+import { CookieBanner } from "@/components/CookieBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Leaf, LogOut, Trash2 } from "lucide-react";
@@ -368,6 +369,9 @@ const Index = () => {
         onOpenChange={setEditDialogOpen}
         onSave={handleSaveSession}
       />
+
+      {/* Cookie Banner */}
+      <CookieBanner />
     </div>
   );
 };
