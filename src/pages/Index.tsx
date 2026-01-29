@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session as SupabaseSession } from "@supabase/supabase-js";
 import { SessionForm } from "@/components/SessionForm";
@@ -345,8 +345,11 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="mt-20 py-8 border-t border-border/30">
-        <div className="container mx-auto px-4 text-center text-muted-foreground text-sm">
+        <div className="container mx-auto px-4 text-center text-muted-foreground text-sm space-y-2">
           <p>Track responsibly. This app is for personal tracking purposes only.</p>
+          <Link to="/impressum" className="hover:text-primary transition-colors">
+            Impressum
+          </Link>
         </div>
       </footer>
 
